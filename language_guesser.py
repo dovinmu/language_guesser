@@ -7,7 +7,7 @@ from difflib import SequenceMatcher
 
 df = DataFrame.from_csv('language_speakers', index_col='language')
 
-score = 0
+score = 900
 families = set()
 
 unprintables = []
@@ -22,14 +22,7 @@ for lang in udhr.fileids():
         print('could not print... ', lang + ':\t')
         unprintables.append(lang)
     time.sleep(.005)
-'''
-I know: Vietnamese
 
-Close: Swedish (guessed Icelandic), Hungarian (Romanian), Bulgarian (Russian),
-
-I don't know: Tenek_Huasteco, Bosnian_Bosanski, WesternSotho_Tswana Setswana, Lingala, Themne_Temne, Sussu_Soussou Soso Susu, Chamorro, Tojo abal, Hausteco, Rhaeto Romance_Rumantsch, HaitianCreole_Popular, Ido, Qechi_Kekchi, Abkhaz, Baoule, Shipibo Conibo
-
-'''
 def guessLanguage():
     global score
     lang = random.choice(list(languages.keys()))
@@ -46,7 +39,10 @@ def guessLanguage():
         score += df.loc[lang].get('speakers_native(m)')
         if type('') == type(df.loc[lang].family):
             families.add(df.loc[lang].family)
-        print('current score: {}m'.format(score))
+        if score > 1000:
+            print('current score: {}b'.format(int(score/10)/100))
+        else:
+            print('current score: {}m'.format(score))
         print('families collected:', ', '.join(sorted(list(families))))
     else:
         close = False
@@ -55,7 +51,10 @@ def guessLanguage():
             print('Yup! The specific language is {}.'.format(lang_print))
             if type('') == type(df.loc[lang].family):
                 families.add(df.loc[lang].family)
-            print('current score: {}m'.format(score))
+            if score > 1000:
+                print('current score: {}b'.format(int(score/10)/100))
+            else:
+                print('current score: {}m'.format(score))
             print('families collected:', ', '.join(sorted(list(families))))
         else:
             for idx in df.index:
