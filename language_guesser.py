@@ -5,69 +5,86 @@ import random
 from pandas import DataFrame
 from difflib import SequenceMatcher
 
-df = DataFrame.from_csv('language_speakers', index_col='language')
+class LanguageGuesser:
+    def __init__(self):
+        self.df = DataFrame.from_csv('language_speakers', index_col='language')
+        self.score = 900
+        self.families = set()
 
-score = 900
-families = set()
+        self.unprintables = []
+        self.languages = {}
+        for lang in udhr.fileids():
+            lang_name = ' '.join(lang.split('-')[:-1])
+            try:
+                print(' '.join(udhr.sents(lang)[0])[:50] + '...', lang_name)
+                if lang_name in self.df.index and self.df.loc[lang_name].get('speakers_native(m)') > 1:
+                    self.languages[lang_name] = udhr.sents(lang)
+            except:
+                print('could not print... ', lang + ':\t')
+                self.unprintables.append(lang)
+            #time.sleep(.005)
 
-unprintables = []
-languages = {}
-for lang in udhr.fileids():
-    lang_name = ' '.join(lang.split('-')[:-1])
-    try:
-        print(' '.join(udhr.sents(lang)[0])[:50] + '...', lang_name)
-        if lang_name in df.index and df.loc[lang_name].get('speakers_native(m)') > 1:
-            languages[lang_name] = udhr.sents(lang)
-    except:
-        print('could not print... ', lang + ':\t')
-        unprintables.append(lang)
-    time.sleep(.005)
+    def getNextLanguage(self):
+        lang = random.choice(list(self.languages.keys()))
+        langName = lang.split('_')[0]
+        return langName, self.languages[lang]
 
-def guessLanguage():
-    global score
-    lang = random.choice(list(languages.keys()))
-    lang_print = lang.split('_')[0]
-    guess = ''
-    sent_idx = 0
-    print('Guess the language (hit enter to see more, or guess the language family):\n')
-    while guess == '':
-        print(' '.join(languages[lang][sent_idx])[:300])
-        guess = input('')
-        sent_idx = (sent_idx + 1) % len(languages[lang])
-    if guess in lang:
-        print('Correct! {}\n+{} speakers to score!'.format(lang.replace('_',' / '), df.loc[lang].get('speakers_native(m)')))
-        score += df.loc[lang].get('speakers_native(m)')
-        if type('') == type(df.loc[lang].family):
-            families.add(df.loc[lang].family)
-        if score > 1000:
-            print('current score: {}b'.format(int(score/10)/100))
-        else:
-            print('current score: {}m'.format(score))
-        print('families collected:', ', '.join(sorted(list(families))))
-    else:
-        close = False
-        if guess == df.loc[lang].family:
-            close = True
-            print('Yup! The specific language is {}.'.format(lang_print))
-            if type('') == type(df.loc[lang].family):
-                families.add(df.loc[lang].family)
-            if score > 1000:
-                print('current score: {}b'.format(int(score/10)/100))
+    def verifyGuess(self, langName, guess):
+        return langName == guess
+
+    def guessLanguage(self):
+        lang = random.choice(list(self.languages.keys()))
+        lang_print = lang.split('_')[0]
+        guess = ''
+        sent_idx = 0
+        print('Guess the language (hit enter to see more, or guess the language family):\n')
+        while guess == '':
+            print(' '.join(self.languages[lang][sent_idx])[:300])
+            guess = input('')
+            sent_idx = (sent_idx + 1) % len(self.languages[lang])
+        if guess in lang:
+            print('Correct! {}\n+{} speakers to score!'.format(lang.replace('_',' / '), self.df.loc[lang].get('speakers_native(m)')))
+            self.score += self.df.loc[lang].get('speakers_native(m)')
+            if type('') == type(self.df.loc[lang].family):
+                families.add(self.df.loc[lang].family)
+            if self.score > 1000:
+                print('current score: {}b'.format(int(self.score/10)/100))
             else:
-                print('current score: {}m'.format(score))
+                print('current score: {}m'.format(self.score))
             print('families collected:', ', '.join(sorted(list(families))))
         else:
-            for idx in df.index:
-                if guess in idx and df.loc[idx].family == df.loc[lang].family:
-                    print('Close! {} and {} are both {} languages.'.format(guess, lang_print, df.loc[lang].family))
-                    close = True
-                    break
-        if not close:
-            print('Incorrect. Answer: {}\nnative speakers: \t{}\nfamily: \t\t{}'.format(lang_print, df.loc[lang].get('speakers_native(m)'), df.loc[lang].family))
-    input('')
-    print('_'*80 + '\n')
+            close = False
+            if guess == self.df.loc[lang].family:
+                close = True
+                print('Yup! The specific language is {}.'.format(lang_print))
+                if type('') == type(self.df.loc[lang].family):
+                    families.add(self.df.loc[lang].family)
+                if score > 1000:
+                    print('current score: {}b'.format(int(self.score/10)/100))
+                else:
+                    print('current score: {}m'.format(self.score))
+                print('families collected:', ', '.join(sorted(list(families))))
+            else:
+                for idx in self.df.index:
+                    if guess in idx and self.df.loc[idx].family == self.df.loc[lang].family:
+                        print('Close! {} and {} are both {} languages.'.format(guess, lang_print, self.df.loc[lang].family))
+                        close = True
+                        break
+            if not close:
+                print('Incorrect. Answer: {}\nnative speakers: \t{}\nfamily: \t\t{}'.format(lang_print, self.df.loc[lang].get('speakers_native(m)'), self.df.loc[lang].family))
+        input('')
+        print('_'*80 + '\n')
 
-print('\n'*5)
-while True:
-    guessLanguage()
-#print('\nCould not print the following:', ', '.join(unprintables))
+if __name__ == "__main__":
+    game = LanguageGuesser()
+    print('\n'*5)
+    while True:
+        langName, passage = game.getNextLanguage()
+        print(' '.join(passage[0]), '\n' * 5, "Guess the language:")
+        if game.verifyGuess(langName, input('')):
+            print("correct!")
+        else:
+            print("incorrect!")
+        print(langName)
+        input('')
+        #game.guessLanguage()
