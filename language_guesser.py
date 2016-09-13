@@ -1,28 +1,21 @@
-from nltk.corpus import udhr
 import time
 import math
 import random
-from pandas import DataFrame
+import os
+import json
 from difflib import SequenceMatcher
 
 class LanguageGuesser:
     def __init__(self):
-        self.df = DataFrame.from_csv('language_speakers', index_col='language')
         self.score = 900
         self.families = set()
 
         self.unprintables = []
         self.languages = {}
-        for lang in udhr.fileids():
-            lang_name = ' '.join(lang.split('-')[:-1])
-            try:
-                print(' '.join(udhr.sents(lang)[0])[:50] + '...', lang_name)
-                if lang_name in self.df.index and self.df.loc[lang_name].get('speakers_native(m)') > 1:
-                    self.languages[lang_name] = udhr.sents(lang)
-            except:
-                print('could not print... ', lang + ':\t')
-                self.unprintables.append(lang)
-            #time.sleep(.005)
+
+        for fname in os.listdir('passages'):
+            with open('passages/' + fname, 'r') as f:
+                self.languages[fname[:-5]] = json.loads(f.read())
 
     def getNextLanguage(self):
         lang = random.choice(list(self.languages.keys()))
