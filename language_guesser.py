@@ -6,16 +6,19 @@ import json
 from difflib import SequenceMatcher
 
 class LanguageGuesser:
-    def __init__(self):
+    def __init__(self, path=''):
         self.score = 900
         self.families = set()
 
         self.unprintables = []
         self.languages = {}
 
-        for fname in os.listdir('passages'):
-            with open('passages/' + fname, 'r') as f:
+        for fname in os.listdir(path + 'passages'):
+            with open(path + 'passages/' + fname, 'r') as f:
                 self.languages[fname[:-5]] = json.loads(f.read())
+
+    def getLanguagesSubset(self, count=5):
+        return [lang.split('_')[0] for lang in random.sample(list(self.languages.keys()), count)]
 
     def getNextLanguage(self):
         lang = random.choice(list(self.languages.keys()))
